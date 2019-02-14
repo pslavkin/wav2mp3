@@ -11,14 +11,18 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <thread>
+#include <mutex>
 
 typedef std::vector<std::string> String_Vector;
 std::string   Dir;
 String_Vector Files;
+std::thread Threads[4];
+std::mutex Mutexes[4];
 //-----------------------------------------------
 void Find_Wav_Files(const std::string& dir, String_Vector& files);
 void Convert_Wav_To_Mp3(String_Vector& Wav_Files);
-void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name);
+void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name,char i);
 //-----------------------------------------------
 int main(int argc, char** argv)
 {
@@ -52,11 +56,27 @@ void Find_Wav_Files(const std::string& dir, String_Vector& files)
 
 void Convert_Wav_To_Mp3(String_Vector& Wav_Files)
 {
+   bool On_Work;
    for(auto F: Wav_Files) {
-      Convert_One_File_Wav_To_Mp3(Dir + F);
+      On_Work=false;
+      while(On_Work==false) {
+         for(int i=0; i<4 ; i++) {
+            if(Mutexes[i].try_lock()) {
+               if(Threads[i].joinable())
+                  Threads[i].join();
+               Threads[i]=std::thread(Convert_One_File_Wav_To_Mp3,(Dir + F),i);
+               On_Work=true;
+               break;
+            }
+         }
+      }
+   }
+   for(int i=0; i<4 ; i++) {
+      if(Threads[i].joinable())
+         Threads[i].join();
    }
 }
-void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name)
+void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name,char i)
 {
    std::string S;
    std::ofstream Mp3_File;
@@ -68,6 +88,9 @@ void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name)
    while(std::getline(Wav_File,S)) {
       Mp3_File << S << std::endl;
    }
+   std::cout<< "convirtiendo " << Wav_File_Name << " -> " << Mp3_File_Name << std::endl;
+   sleep(1);
    Wav_File.close();
    Mp3_File.close();
+   Mutexes[i].unlock();
 }
