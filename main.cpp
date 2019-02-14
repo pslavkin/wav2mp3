@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <string.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <dirent.h>
@@ -15,8 +16,15 @@ void List_Dirs(const std::string& dir, String_Vector& files)
  DIR* dirp = opendir(dir.c_str());
     struct dirent* dp;
     while ((dp = readdir(dirp)) != NULL) {
-       files.push_back(dp->d_name);
-       std::cout << dp->d_name << std::endl;
+       std::string File_Name=dp->d_name;
+       if(File_Name.length() > 4 ) {
+          std::string File_Extension = File_Name.substr(File_Name.find_last_of(".") + 1);
+          std::transform(File_Extension.begin(),File_Extension.end(), File_Extension.begin(), ::tolower);
+          if(File_Extension=="wav") {
+             files.push_back(File_Name);
+             std::cout << File_Name << std::endl; //debug
+          }
+       }
     }
     closedir(dirp);
 }
