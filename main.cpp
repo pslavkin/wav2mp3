@@ -17,18 +17,20 @@
 typedef std::vector<std::string> String_Vector;
 std::string   Dir;
 String_Vector Files;
-std::thread Threads[4];
-std::mutex Mutexes[4];
+unsigned int Cores=std::thread::hardware_concurrency();
+std::thread Threads[4]; //TODO crear dinamicamente los arraye
+std::mutex Mutexes[4 ];
 //-----------------------------------------------
 void Find_Wav_Files(const std::string& dir, String_Vector& files);
 void Convert_Wav_To_Mp3(String_Vector& Wav_Files);
-void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name,char i);
+void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name,int i);
 //-----------------------------------------------
 int main(int argc, char** argv)
 {
    if(argc < 2 )
       exit(1);
    else {
+      std::cout << "cores=" << Cores << std::endl;
       Dir = argv[1];
       Find_Wav_Files(Dir,Files);
       Convert_Wav_To_Mp3(Files);
@@ -56,15 +58,14 @@ void Find_Wav_Files(const std::string& dir, String_Vector& files)
 
 void Convert_Wav_To_Mp3(String_Vector& Wav_Files)
 {
-   bool On_Work;
    for(auto F: Wav_Files) {
-      On_Work=false;
-      while(On_Work==false) {
+      for(bool On_Work=false;On_Work==false;sleep(0.1)) {
          for(int i=0; i<4 ; i++) {
             if(Mutexes[i].try_lock()) {
                if(Threads[i].joinable())
                   Threads[i].join();
                Threads[i]=std::thread(Convert_One_File_Wav_To_Mp3,(Dir + F),i);
+               std::cout<< "task " << i << " working" << std::endl; //debug
                On_Work=true;
                break;
             }
@@ -76,7 +77,7 @@ void Convert_Wav_To_Mp3(String_Vector& Wav_Files)
          Threads[i].join();
    }
 }
-void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name,char i)
+void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name,int i)
 {
    std::string S;
    std::ofstream Mp3_File;
@@ -88,8 +89,8 @@ void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name,char i)
    while(std::getline(Wav_File,S)) {
       Mp3_File << S << std::endl;
    }
-   std::cout<< "convirtiendo " << Wav_File_Name << " -> " << Mp3_File_Name << std::endl;
-   sleep(1);
+   std::cout<< "task " << i << " coding " << Wav_File_Name << " -> " << Mp3_File_Name << std::endl; //debug
+   sleep(1); //debug
    Wav_File.close();
    Mp3_File.close();
    Mutexes[i].unlock();
