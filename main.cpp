@@ -1,6 +1,9 @@
 #include <sys/types.h>
 #include <string.h>
 #include <getopt.h>
+#include <unistd.h>
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <dirent.h>
 #include <iostream>
@@ -10,8 +13,26 @@
 #include <iterator>
 
 typedef std::vector<std::string> String_Vector;
-
-void List_Dirs(const std::string& dir, String_Vector& files)
+std::string   Dir;
+String_Vector Files;
+//-----------------------------------------------
+void Find_Wav_Files(const std::string& dir, String_Vector& files);
+void Convert_Wav_To_Mp3(String_Vector& Wav_Files);
+void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name);
+//-----------------------------------------------
+int main(int argc, char** argv)
+{
+   if(argc < 2 )
+      exit(1);
+   else {
+      Dir = argv[1];
+      Find_Wav_Files(Dir,Files);
+      Convert_Wav_To_Mp3(Files);
+   }
+   return 0;
+}
+//---------------------------------------
+void Find_Wav_Files(const std::string& dir, String_Vector& files)
 {
  DIR* dirp = opendir(dir.c_str());
     struct dirent* dp;
@@ -29,17 +50,24 @@ void List_Dirs(const std::string& dir, String_Vector& files)
     closedir(dirp);
 }
 
-
-int main(int argc, char** argv)
+void Convert_Wav_To_Mp3(String_Vector& Wav_Files)
 {
-   if(argc < 2 )
-      exit(1);
-   else {
-      std::string Dir;
-      String_Vector Files;
-      Dir = argv[1];
-      List_Dirs(Dir,Files);
+   for(auto F: Wav_Files) {
+      Convert_One_File_Wav_To_Mp3(Dir + F);
    }
-   return 0;
 }
-
+void Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name)
+{
+   std::string S;
+   std::ofstream Mp3_File;
+   std::ifstream Wav_File;
+   std::string Mp3_File_Name=Wav_File_Name.substr ( 0,Wav_File_Name.find_last_of(".")+1) +
+      "mp3";
+   Wav_File.open(Wav_File_Name);
+   Mp3_File.open(Mp3_File_Name);
+   while(std::getline(Wav_File,S)) {
+      Mp3_File << S << std::endl;
+   }
+   Wav_File.close();
+   Mp3_File.close();
+}
