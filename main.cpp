@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <dirent.h>
+#include <lame/lame.h>
 
 #include <iostream>
 #include <fstream>
@@ -67,21 +68,41 @@ void Convert_Wav_To_Mp3(String_Vector& Wav_Files)
 }
 int Convert_One_File_Wav_To_Mp3(std::string Wav_File_Name)
 {
-   std::string S;
-   std::ofstream Mp3_File;
-   std::ifstream Wav_File;
    std::string Mp3_File_Name=Wav_File_Name.substr ( 0,Wav_File_Name.find_last_of(".")+1) + "mp3";
-   Wav_File.open(Wav_File_Name);
-   Mp3_File.open(Mp3_File_Name);
-   while(std::getline(Wav_File,S)) {
-      Mp3_File << S << std::endl;
-   }
+   int read, write;
+
+   FILE *pcm = fopen(Wav_File_Name.c_str(), "rb");
+   FILE *mp3 = fopen(Mp3_File_Name.c_str(), "wb");
+
+   const int PCM_SIZE = 8192;
+   const int MP3_SIZE = 8192;
+
+   short int pcm_buffer[PCM_SIZE*2];
+   unsigned char mp3_buffer[MP3_SIZE];
+
+   lame_t lame = lame_init();
+   lame_set_in_samplerate(lame, 44100);
+   lame_set_VBR(lame, vbr_default);
+   lame_init_params(lame);
+
    Print_Mutex.lock();
-      std::cout<< " coding " << Wav_File_Name << " -> " << Mp3_File_Name << std::endl; //debug
+      std::cout<< "Begin coding " << Wav_File_Name << " -> " << Mp3_File_Name << std::endl; //debug
    Print_Mutex.unlock();
-   sleep(1); //debug
-   Wav_File.close();
-   Mp3_File.close();
+   do {
+      read = fread(pcm_buffer, 2*sizeof(short int), PCM_SIZE, pcm);
+      if (read == 0)
+         write = lame_encode_flush(lame, mp3_buffer, MP3_SIZE);
+      else
+         write = lame_encode_buffer_interleaved(lame, pcm_buffer, read, mp3_buffer, MP3_SIZE);
+      fwrite(mp3_buffer, write, 1, mp3);
+   } while (read != 0);
+
+   lame_close(lame);
+   fclose(mp3);
+   fclose(pcm);
+   Print_Mutex.lock();
+      std::cout<< "End coding " << Wav_File_Name << " -> " << Mp3_File_Name << std::endl; //debug
+   Print_Mutex.unlock();
    sem_post(&Task_Sem);
    return 0;
 }
