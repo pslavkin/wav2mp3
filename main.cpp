@@ -35,8 +35,8 @@ void Find_Wav_Files              ( const std::string& dir, String_Vector& files 
 int  Convert_One_File_Wav_To_Mp3 ( std::string Wav_File_Name                        );
 void Convert_Wav_To_Mp3          ( const std::string& Dir, String_Vector& Wav_Files );
 //----------MAIN---------------------------------
-int main(int argc, char** argv){{{
-{
+int main(int argc, char** argv)
+{/*{{{*/
    if(argc < 2 ) {
 #if DEBUG==1
       std::cout << "no input files" << std::endl;
