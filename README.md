@@ -19,3 +19,9 @@ On win you need to include the DLL's that I copy on exe dirs beside the .exe
 
 TODO: on win, the statically compiled only include gcc and stdg++ but mp3lame is again dinamically compiled.
       on linux it works like a charm
+
+video link to a hands-on explanation
+
+https://www.youtube.com/watch?v=7QKa41fp6F0&feature=youtu.be
+
+
