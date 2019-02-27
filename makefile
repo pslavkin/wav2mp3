@@ -1,7 +1,20 @@
+STATIC_LIB = 1
 all:
 ifeq ($(OS),Windows_NT)
-		g++ -v -static main.cpp -lpthread -L./static_lib/win/ -lmp3lame -o wav2mp3
+ifeq ($(STATIC_LIB),1)
+	#TODO: lmp3lame.a for win is not statically compiled, so it call dll.
+			g++ -v -static main.cpp -lpthread -L./static_lib/win/ -lmp3lame -o exe/wav2mp3_static_win
+			objdump -D exe/wav2mp3_static_win > obj/obj_static_win
 else
-		g++ -v main.cpp -lpthread   -Wl,-static -L./static_lib/linux/ -lmp3lame  -Wl,-Bdynamic -o wav2mp3
-
+			g++ -v main.cpp -lpthread -lmp3lame -o exe/wav2mp3_dynamic_win
+			objdump -D exe/wav2mp3_dynamic_win > obj/obj_dynamic_win
+endif
+else
+ifeq ($(STATIC_LIB),1)
+			g++ -v main.cpp -lpthread -L./static_lib/linux/ -Wl,-Bstatic -lmp3lame -Wl,-Bdynamic  -o exe/wav2mp3_static_linux
+			objdump -D exe/wav2mp3_static_linux > obj/obj_static_linux
+else
+			g++ -v main.cpp -lpthread  -lmp3lame -o exe/wav2mp3_dynamic_linux
+			objdump -D exe/wav2mp3_dynamic_linux > obj/obj_dynamic_linux
+endif
 endif
